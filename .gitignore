@@ -1,0 +1,6 @@
+# outputs
+outputs/
+*.zip
+
+# real scraper
+1-scrape-real.sh
