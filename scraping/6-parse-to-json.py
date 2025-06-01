@@ -2,7 +2,7 @@
 
 import json
 import sys
-from bs4 import BeautifulSoup, NavigableString, CData, Tag, Iterator, element
+from bs4 import BeautifulSoup, NavigableString, Tag
 
 def recursiveChildren(elem) -> list:
     if isinstance(elem, NavigableString):
@@ -18,30 +18,19 @@ def recursiveChildren(elem) -> list:
                      "children": childrenStr, 
                      "to": elem.attrs["onclick"],
                      }]
-        elif elem.name == "i":
-            return [{
-                     "type": "italics",
-                     "children": childrenStr, 
-                     }]
-        elif elem.name == "br":
-            return [{
-                 "type": "linebreak",
-                }]
-        elif elem.name == "u":
-            return [{
-                 "type": "underline",
-                 "children": childrenStr, 
-                }]
-        elif elem.name == "b":
-            return [{
-                 "type": "bold",
-                 "children": childrenStr, 
-                }]
-        elif elem.name == "div":
+        if elem.name == "div":
             return childrenStr
         else:
-            print("Unknown Tag",elem.name)
-            exit(1)
+            out = {
+                 "type": elem.name,
+                 "attrs": elem.attrs,
+                 "children": childrenStr, 
+                }
+            if out["attrs"] == {}:
+                del out["attrs"]
+            if out["children"] == []:
+                del out["children"]
+            return [out]
     else:
         print("Neither a Tag nor a NavigableString",str(elem))
         exit(1)
@@ -67,13 +56,11 @@ if __name__ == "__main__":
     if len(sys.argv) < 3:
         print("required <input> <output> files")
 
-    content = ""
+    results = []
     with open(sys.argv[1],"r") as f:
-        content = f.read()
+        soup = BeautifulSoup(f, 'html.parser')
+        results = parse_soup(soup)
 
-    soup = BeautifulSoup(content, 'html.parser')
-
-    results = parse_soup(soup)
     js = json.dumps(results)
 
     with open(sys.argv[2], "w") as f:

@@ -49,3 +49,16 @@ Final sanity check
   ./9-sanity-check.sh outputs/definitions_json_grouped
   
   diff <(./10-sanity-check-word.sh outputs/definitions_json_grouped | sort) <(./sanity-checker-word outputs/extracted)
+
+## Notes
+
+The final step extraction step tries to preserve as much data
+from the html structure as possible into json format. This 
+results in the definition part being a tree structure of html
+tags (skipping all `<div>` tags of course). Future applications
+may decide to rebuild the html structure or put it in markdown
+for example.
+
+To find the unique tags
+
+  grep -rh "type" | sed -E "s/^\s*//" | sort | uniq
