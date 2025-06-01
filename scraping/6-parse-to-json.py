@@ -2,7 +2,50 @@
 
 import json
 import sys
-from bs4 import BeautifulSoup
+from bs4 import BeautifulSoup, NavigableString, CData, Tag, Iterator, element
+
+def recursiveChildren(elem) -> list:
+    if isinstance(elem, NavigableString):
+        return [str(elem)]
+    elif isinstance(elem,Tag):
+        childrenStr = []
+        for child in elem.children:
+            childrenStr += recursiveChildren(child)
+        if elem.name == "label" and "onclick" in elem.attrs:
+            # special label
+            return [{ 
+                     "type": "label-onclick",
+                     "children": childrenStr, 
+                     "to": elem.attrs["onclick"],
+                     }]
+        elif elem.name == "i":
+            return [{
+                     "type": "italics",
+                     "children": childrenStr, 
+                     }]
+        elif elem.name == "br":
+            return [{
+                 "type": "linebreak",
+                }]
+        elif elem.name == "u":
+            return [{
+                 "type": "underline",
+                 "children": childrenStr, 
+                }]
+        elif elem.name == "b":
+            return [{
+                 "type": "bold",
+                 "children": childrenStr, 
+                }]
+        elif elem.name == "div":
+            return childrenStr
+        else:
+            print("Unknown Tag",elem.name)
+            exit(1)
+    else:
+        print("Neither a Tag nor a NavigableString",str(elem))
+        exit(1)
+
 
 def parse_soup(soup):
     results = []
@@ -14,14 +57,9 @@ def parse_soup(soup):
             continue
 
         word = word_tag.get_text(strip=True)
-        for label in definition_tag.select('label[onclick^="lookupWord1"]'):
-            lookup_word = label.get_text(strip=True)
-            # assumes "[[lookup:" and "]]" does not exist in text
-            label.replace_with(f"[[lookup:{lookup_word}]]")
+        parsed = recursiveChildren(definition_tag)
 
-        # Preserve HTML (with <lookup>) in definition
-        definition = definition_tag.get_text(" ", strip=True)
-        results.append({"word": word, "definition": definition})
+        results.append({"word": word, "definition": parsed})
     return results
 
 
